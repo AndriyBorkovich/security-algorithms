@@ -1,10 +1,14 @@
-﻿using Security.Labs.Algorithms;
+﻿using Microsoft.Win32;
+using Security.Labs.Algorithms;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
+using MD5Custom = Security.Labs.Algorithms.MD5;
+using MD5System = System.Security.Cryptography.MD5;
 
 namespace Security.Labs;
 
@@ -16,6 +20,7 @@ public partial class MainWindow : Window
     public ObservableCollection<long> RandomNumbers { get; set; }
     private readonly BackgroundWorker backgroundWorker;
     private LehmerGenerator generator;
+    private string selectedFilePath;
 
     public MainWindow()
     {
@@ -35,6 +40,8 @@ public partial class MainWindow : Window
         backgroundWorker.RunWorkerCompleted += BackgroundWorker_RunWorkerCompleted;
 
     }
+
+    #region Lehmer
     private void BackgroundWorker_DoWork(object? sender, DoWorkEventArgs e)
     {
         if (backgroundWorker.CancellationPending)
@@ -112,13 +119,57 @@ public partial class MainWindow : Window
         }
     }
 
+    private void BtnCancel_Click(object sender, RoutedEventArgs e)
+    {
+        if (backgroundWorker.IsBusy)
+        {
+            backgroundWorker.CancelAsync();
+        }
+    }
+    #endregion Lehmer
+
+    #region MD5
     private void ComputeButton_Click(object sender, RoutedEventArgs e)
     {
         var input = InputTextBox.Text;
-        var hash = MD5.ComputeHashForString(input);
+        var hash = MD5.Calculate(Encoding.UTF8.GetBytes(input));
         ResultTextBlock.Text = $"Hash: {hash}";
     }
 
+    private void SelectFileButton_Click(object sender, RoutedEventArgs e)
+    {
+        var openFileDialog = new OpenFileDialog();
+        if (openFileDialog.ShowDialog() == true)
+        {
+            selectedFilePath = openFileDialog.FileName;
+            SelectedFileTextBlock.Text = $"Selected file: {selectedFilePath}";
+        }
+    }
+
+    private void ComputeFileButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrEmpty(selectedFilePath))
+        {
+            MessageBox.Show("Please select a file first.");
+            return;
+        }
+
+        try
+        {
+            var fileBytes = File.ReadAllBytes(selectedFilePath);
+            var resultHash = MD5Custom.Calculate(fileBytes);
+            var expectedHash = MD5System.HashData(fileBytes);
+            ResultTextBlock.Text = $"Hash of file: {resultHash}\n";
+            ResultTextBlock.Text += $"Expected: {BitConverter.ToString(expectedHash).Replace("-", "").ToLowerInvariant()}";
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error reading file: {ex.Message}");
+        }
+    }
+    #endregion MD5
+
+    #region LehmerUIHelpers
     private bool IsValidInput()
     {
         // Create a mapping of input fields with corresponding error messages
@@ -170,8 +221,6 @@ public partial class MainWindow : Window
 
         if (period.HasValue)
         {
-            HighlightPeriodIndices(period.Value, firstPeriodOccurrence);
-
             lblPeriod.Content = $"The period of the sequence is: {period} (First occurrence at index {firstPeriodOccurrence})";
         }
         else
@@ -179,29 +228,11 @@ public partial class MainWindow : Window
             lblPeriod.Content = "No period found within the specified count.";
         }
     }
-
-    private void HighlightPeriodIndices(int period, int firstOccurrence)
-    {
-        for (int i = firstOccurrence; i < RandomNumbers.Count; i += period)
-        {
-            if (lstNumbers.ItemContainerGenerator.ContainerFromIndex(i) is ListBoxItem item)
-            {
-                item.Background = Brushes.LightGreen;
-            }
-        }
-    }
+    #endregion LehmerUIHelpers
 
     private void AllowOnlyNumbersPreviewTextInput(object sender, System.Windows.Input.TextCompositionEventArgs e)
     {
         var regex = new Regex("[^0-9]+"); // Only allow digits
         e.Handled = regex.IsMatch(e.Text);
-    }
-
-    private void BtnCancel_Click(object sender, RoutedEventArgs e)
-    {
-        if (backgroundWorker.IsBusy)
-        {
-            backgroundWorker.CancelAsync();
-        }
     }
 }

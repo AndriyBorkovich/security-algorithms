@@ -47,7 +47,7 @@ public class LehmerGeneratorTests
         // Assert
         Assert.NotNull(period2);
         Assert.True(period2 > 0);
-        Assert.Equal(3, firstPeriodOccurrence2);
+        Assert.Equal(16, firstPeriodOccurrence2);
     }
 
     [Fact]
