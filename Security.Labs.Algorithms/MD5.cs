@@ -92,7 +92,7 @@ public class MD5
                 var dtemp = D;
                 D = C;
                 C = B;
-                B = B + LeftRotate((A + F + K[k] + M[g]), S[k]);
+                B += LeftRotate((A + F + K[k] + M[g]), S[k]);
                 A = dtemp;
             }
 
@@ -102,7 +102,7 @@ public class MD5
             d0 += D;
         }
 
-        return GetByteString(a0) + GetByteString(b0) + GetByteString(c0) + GetByteString(d0);
+        return string.Concat(GetByteString(a0), GetByteString(b0), GetByteString(c0), GetByteString(d0));
     }
 
     private static string GetByteString(uint x)

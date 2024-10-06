@@ -158,9 +158,10 @@ public partial class MainWindow : Window
         {
             var fileBytes = File.ReadAllBytes(selectedFilePath);
             var resultHash = MD5Custom.Calculate(fileBytes);
-            var expectedHash = MD5System.HashData(fileBytes);
+            var expectedHash = BitConverter.ToString(MD5System.HashData(fileBytes)).Replace("-", "").ToLowerInvariant();
             ResultTextBlock.Text = $"Hash of file: {resultHash}\n";
-            ResultTextBlock.Text += $"Expected: {BitConverter.ToString(expectedHash).Replace("-", "").ToLowerInvariant()}";
+            ResultTextBlock.Text += $"Expected: {expectedHash}\n";
+            ResultTextBlock.Text += $"Data integrity check is {(string.Equals(resultHash, expectedHash, StringComparison.InvariantCultureIgnoreCase) ? "passed" : "not passed")}";
         }
         catch (Exception ex)
         {

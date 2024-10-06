@@ -14,7 +14,7 @@ public class MD5Tests
     [InlineData("12345678901234567890123456789012345678901234567890123456789012345678901234567890", "57EDF4A22BE3C955AC49DA2E2107B67A")]
     public void TestMD5Hash(string input, string expectedHash)
     {
-        string actualHash = MD5.Calculate(Encoding.UTF8.GetBytes(input));
+        var actualHash = MD5.Calculate(Encoding.UTF8.GetBytes(input));
 
         Assert.Equal(expectedHash, actualHash, ignoreCase: true);
     }
