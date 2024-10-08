@@ -5,7 +5,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:Security.Labs"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    Title="LCG"
+    Title="Security algorithms"
     Width="1000"
     Height="600"
     mc:Ignorable="d">
@@ -123,47 +123,80 @@
                         Margin="0,0,0,10"
                         HorizontalAlignment="Center"
                         FontSize="22"
-                        Text="Enter text to hash:" />
-                    <TextBox
-                        Name="InputTextBox"
-                        Width="400"
-                        Height="50"
-                        Margin="0,0,0,10"
-                        TextWrapping="Wrap" />
-                    <Button
-                        Name="ComputeButton"
-                        Width="100"
-                        Margin="0,10,0,10"
-                        Click="ComputeButton_Click"
-                        Content="Compute MD5" />
+                        Text="Select input Type:" />
+                    <ComboBox
+                        Name="InputTypeComboBox"
+                        Width="200"
+                        SelectionChanged="InputTypeComboBox_SelectionChanged">
+                        <ComboBoxItem Content="Text" />
+                        <ComboBoxItem Content="File" />
+                    </ComboBox>
 
-                    <TextBlock
+                    <StackPanel
+                        Name="TextBoxPanel"
                         Margin="0,20,0,10"
-                        HorizontalAlignment="Center"
-                        FontSize="22"
-                        Text="Or select a file to hash:" />
-                    <Button
-                        Name="SelectFileButton"
-                        Width="100"
-                        Click="SelectFileButton_Click"
-                        Content="Select File" />
-                    <TextBlock
-                        Name="SelectedFileTextBlock"
-                        Margin="0,10,0,0"
-                        HorizontalAlignment="Center"
-                        FontSize="18"
-                        FontWeight="Bold" />
+                        Visibility="Collapsed">
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            FontSize="22"
+                            Text="Enter text to hash:" />
+                        <TextBox
+                            Name="InputTextBox"
+                            Width="400"
+                            Height="50"
+                            Margin="0,0,0,10"
+                            TextWrapping="Wrap" />
+                        <Button
+                            Name="ComputeButton"
+                            Width="100"
+                            Margin="0,10,0,10"
+                            Click="ComputeMD5ForTextButton_Click"
+                            Content="Compute MD5" />
+                    </StackPanel>
 
-                    <Button
-                        Name="ComputeFileButton"
-                        Width="150"
-                        Margin="0,10,0,10"
-                        Click="ComputeFileButton_Click"
-                        Content="Compute MD5 of File" />
+                    <StackPanel
+                        Name="FilePanel"
+                        Margin="0,20,0,10"
+                        Visibility="Collapsed">
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            FontSize="22"
+                            Text="Or select a file to hash:" />
+                        <Button
+                            Name="SelectFileButton"
+                            Width="100"
+                            Click="SelectFileButton_Click"
+                            Content="Select File" />
+                        <TextBlock
+                            Name="SelectedFileTextBlock"
+                            Margin="0,10,0,0"
+                            HorizontalAlignment="Center"
+                            FontSize="18"
+                            FontWeight="Bold" />
+                        <Button
+                            Name="ComputeFileButton"
+                            Width="150"
+                            Margin="0,10,0,10"
+                            Click="ComputeMD5ForFileButton_Click"
+                            Content="Compute MD5 of file" />
+                        <Button
+                            Name="CheckFileIntegrityButton"
+                            Width="200"
+                            Margin="0,10,0,10"
+                            Click="CheckFileIntegrityButton_Click"
+                            Content="Choose file for integrity check" />
+                        <TextBlock
+                            Name="IntegrityResulTextBlock"
+                            Margin="0,10,0,10"
+                            HorizontalAlignment="Center"
+                            FontSize="22"
+                            FontWeight="ExtraBold" />
+                    </StackPanel>
 
+                    <!--  Result  -->
                     <TextBlock
                         Name="ResultTextBlock"
-                        Margin="0,10,0,0"
+                        Margin="0,20,0,0"
                         HorizontalAlignment="Center"
                         FontSize="22"
                         FontWeight="Bold" />

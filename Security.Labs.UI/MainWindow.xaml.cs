@@ -7,8 +7,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
-using MD5Custom = Security.Labs.Algorithms.MD5;
-using MD5System = System.Security.Cryptography.MD5;
 
 namespace Security.Labs;
 
@@ -20,7 +18,7 @@ public partial class MainWindow : Window
     public ObservableCollection<long> RandomNumbers { get; set; }
     private readonly BackgroundWorker backgroundWorker;
     private LehmerGenerator generator;
-    private string selectedFilePath;
+    private string selectedFilePathForMD5;
 
     public MainWindow()
     {
@@ -129,11 +127,10 @@ public partial class MainWindow : Window
     #endregion Lehmer
 
     #region MD5
-    private void ComputeButton_Click(object sender, RoutedEventArgs e)
+    private void ComputeMD5ForTextButton_Click(object sender, RoutedEventArgs e)
     {
         var input = InputTextBox.Text;
-        var hash = MD5.Calculate(Encoding.UTF8.GetBytes(input));
-        ResultTextBlock.Text = $"Hash: {hash}";
+        ResultTextBlock.Text = $"Hash: {MD5.Calculate(Encoding.UTF8.GetBytes(input))}";
     }
 
     private void SelectFileButton_Click(object sender, RoutedEventArgs e)
@@ -141,14 +138,14 @@ public partial class MainWindow : Window
         var openFileDialog = new OpenFileDialog();
         if (openFileDialog.ShowDialog() == true)
         {
-            selectedFilePath = openFileDialog.FileName;
-            SelectedFileTextBlock.Text = $"Selected file: {selectedFilePath}";
+            selectedFilePathForMD5 = openFileDialog.FileName;
+            SelectedFileTextBlock.Text = $"Selected file: {selectedFilePathForMD5}";
         }
     }
 
-    private void ComputeFileButton_Click(object sender, RoutedEventArgs e)
+    private void ComputeMD5ForFileButton_Click(object sender, RoutedEventArgs e)
     {
-        if (string.IsNullOrEmpty(selectedFilePath))
+        if (string.IsNullOrEmpty(selectedFilePathForMD5))
         {
             MessageBox.Show("Please select a file first.");
             return;
@@ -156,16 +153,39 @@ public partial class MainWindow : Window
 
         try
         {
-            var fileBytes = File.ReadAllBytes(selectedFilePath);
-            var resultHash = MD5Custom.Calculate(fileBytes);
-            var expectedHash = BitConverter.ToString(MD5System.HashData(fileBytes)).Replace("-", "").ToLowerInvariant();
-            ResultTextBlock.Text = $"Hash of file: {resultHash}\n";
-            ResultTextBlock.Text += $"Expected: {expectedHash}\n";
-            ResultTextBlock.Text += $"Data integrity check is {(string.Equals(resultHash, expectedHash, StringComparison.InvariantCultureIgnoreCase) ? "passed" : "not passed")}";
+            var fileBytes = File.ReadAllBytes(selectedFilePathForMD5);
+            ResultTextBlock.Text = $"Hash: {MD5.Calculate(fileBytes)}";
         }
         catch (Exception ex)
         {
             MessageBox.Show($"Error reading file: {ex.Message}");
+        }
+    }
+
+    private void InputTypeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        ResultTextBlock.Text = string.Empty; selectedFilePathForMD5 = string.Empty; SelectedFileTextBlock.Text = string.Empty;
+        var selectedInput = (ComboBoxItem)((ComboBox)sender).SelectedItem;
+        if (selectedInput.Content.ToString() == "Text")
+        {
+            TextBoxPanel.Visibility = Visibility.Visible;
+            FilePanel.Visibility = Visibility.Collapsed;
+        }
+        else if (selectedInput.Content.ToString() == "File")
+        {
+            TextBoxPanel.Visibility = Visibility.Collapsed;
+            FilePanel.Visibility = Visibility.Visible;
+        }
+    }
+
+    private void CheckFileIntegrityButton_Click(object sender, RoutedEventArgs e)
+    {
+        var openFileDialog = new OpenFileDialog();
+        if (openFileDialog.ShowDialog() == true)
+        {
+            var filePathToCompare = openFileDialog.FileName;
+            var integrityCheckPassed = MD5.VerifyFileIntegrity(selectedFilePathForMD5, filePathToCompare);
+            IntegrityResulTextBlock.Text = $"Check was {(integrityCheckPassed ? "passed" : "not passed")}";
         }
     }
     #endregion MD5

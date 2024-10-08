@@ -105,6 +105,17 @@ public class MD5
         return string.Concat(GetByteString(a0), GetByteString(b0), GetByteString(c0), GetByteString(d0));
     }
 
+    public static bool VerifyFileIntegrity(string filePath, string md5HashFilePath)
+    {
+        var providedHash = File.ReadAllText(md5HashFilePath).Trim().ToLower();
+
+        var fileBytes = File.ReadAllBytes(filePath);
+
+        var fileHash = Calculate(fileBytes).ToLower();
+
+        return fileHash.Equals(providedHash, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static string GetByteString(uint x)
     {
         return string.Join("", BitConverter.GetBytes(x).Select(y => y.ToString("x2")));
