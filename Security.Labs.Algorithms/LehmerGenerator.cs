@@ -35,6 +35,7 @@ public sealed class LehmerGenerator(long A, long C, long M, long X0, int Count, 
             {
                 period = i - previousIndex;
                 firstPeriodOccurrence = i;
+                break;
             }
             else
             {

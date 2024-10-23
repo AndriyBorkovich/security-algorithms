@@ -36,7 +36,6 @@ public partial class MainWindow : Window
         backgroundWorker.DoWork += BackgroundWorker_DoWork;
         backgroundWorker.ProgressChanged += BackgroundWorker_ProgressChanged;
         backgroundWorker.RunWorkerCompleted += BackgroundWorker_RunWorkerCompleted;
-
     }
 
     #region Lehmer
@@ -124,6 +123,68 @@ public partial class MainWindow : Window
             backgroundWorker.CancelAsync();
         }
     }
+
+    #region UIHelpers
+    private bool IsValidInput()
+    {
+        // Create a mapping of input fields with corresponding error messages
+        var inputFields = new Dictionary<TextBox, string>
+        {
+            { txtModulus, "Modulus (m)" },
+            { txtMultiplier, "Multiplier (a)" },
+            { txtIncrement, "Increment (c)" },
+            { txtSeed, "Seed (X0)" },
+            { txtCount, "Count" }
+        };
+
+        foreach (var field in inputFields)
+        {
+            if (string.IsNullOrWhiteSpace(field.Key.Text) || !IsNumeric(field.Key.Text, field.Key == txtCount ? typeof(int) : typeof(long)))
+            {
+                ShowValidationError(field.Value);
+                field.Key.Focus();
+                return false;
+            }
+        }
+
+        return true;
+
+        bool IsNumeric(string input, Type type)
+        {
+            if (type == typeof(int))
+                return int.TryParse(input, out _);
+            else if (type == typeof(long))
+                return long.TryParse(input, out _);
+
+            return false;
+        }
+
+        void ShowValidationError(string fieldName)
+        {
+            MessageBox.Show($"Please enter a valid {fieldName}.", "Input Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private void OutputGeneratedDataToUi(List<long> randomNumbers, int? period, int firstPeriodOccurrence)
+    {
+        RandomNumbers.Clear();
+
+        foreach (var number in randomNumbers)
+        {
+            RandomNumbers.Add(number);
+        }
+
+        if (period.HasValue)
+        {
+            lblPeriod.Content = $"The period of the sequence is: {period} (First occurrence at index {firstPeriodOccurrence})";
+        }
+        else
+        {
+            lblPeriod.Content = "No period found within the specified count.";
+        }
+    }
+    #endregion UIHelpers
+
     #endregion Lehmer
 
     #region MD5
@@ -184,72 +245,110 @@ public partial class MainWindow : Window
         if (openFileDialog.ShowDialog() == true)
         {
             var filePathToCompare = openFileDialog.FileName;
-            var integrityCheckPassed = MD5.VerifyFileIntegrity(selectedFilePathForMD5, filePathToCompare);
-            IntegrityResulTextBlock.Text = $"Check was {(integrityCheckPassed ? "passed" : "not passed")}";
+            var result = MD5.VerifyFileIntegrity(selectedFilePathForMD5, filePathToCompare);
+            ResultTextBlock.Text = string.Empty;
+            IntegrityResulTextBlock.Text = $"Check was {(result.IsCheckPassed ? "passed" : "not passed")}\n";
+            IntegrityResulTextBlock.Text += $"Actual: {result.ActualResult}\nExpected: {result.ExpectedResult}";
         }
     }
     #endregion MD5
 
-    #region LehmerUIHelpers
-    private bool IsValidInput()
+    #region RC5
+    private void SelectFileToEncodeButton_Click(object sender, RoutedEventArgs e)
     {
-        // Create a mapping of input fields with corresponding error messages
-        var inputFields = new Dictionary<TextBox, string>
+        var openFileDialog = new OpenFileDialog
         {
-            { txtModulus, "Modulus (m)" },
-            { txtMultiplier, "Multiplier (a)" },
-            { txtIncrement, "Increment (c)" },
-            { txtSeed, "Seed (X0)" },
-            { txtCount, "Count" }
+            Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*",
+            Title = "Select file to encode"
         };
 
-        foreach (var field in inputFields)
+        if (openFileDialog.ShowDialog() == true)
         {
-            if (string.IsNullOrWhiteSpace(field.Key.Text) || !IsNumeric(field.Key.Text, field.Key == txtCount ? typeof(int) : typeof(long)))
-            {
-                ShowValidationError(field.Value);
-                field.Key.Focus();
-                return false;
-            }
-        }
-
-        return true;
-
-        bool IsNumeric(string input, Type type)
-        {
-            if (type == typeof(int))
-                return int.TryParse(input, out _);
-            else if (type == typeof(long))
-                return long.TryParse(input, out _);
-
-            return false;
-        }
-
-        void ShowValidationError(string fieldName)
-        {
-            MessageBox.Show($"Please enter a valid {fieldName}.", "Input Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            SelectedFileToEncodeTextBlock.Text = openFileDialog.FileName;
+            EncodeButton.IsEnabled = true;
         }
     }
 
-    private void OutputGeneratedDataToUi(List<long> randomNumbers, int? period, int firstPeriodOccurrence)
+    private void SaveFileToDecodingButton_Click(object sender, RoutedEventArgs e)
     {
-        RandomNumbers.Clear();
+        var saveFileDialog = new SaveFileDialog
+        {
+            Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*",
+            Title = "Save decoded file as"
+        };
 
-        foreach (var number in randomNumbers)
+        if (saveFileDialog.ShowDialog() == true)
         {
-            RandomNumbers.Add(number);
-        }
-
-        if (period.HasValue)
-        {
-            lblPeriod.Content = $"The period of the sequence is: {period} (First occurrence at index {firstPeriodOccurrence})";
-        }
-        else
-        {
-            lblPeriod.Content = "No period found within the specified count.";
+            SelectedFileToDecodingTextBlock.Text = saveFileDialog.FileName;
         }
     }
-    #endregion LehmerUIHelpers
+
+
+    private void EncodeButton_Click(object sender, RoutedEventArgs e)
+    {
+        const int KeyLength = 16;
+        var rc5 = new RC5(32, 12, KeyLength);
+
+        var fileToEncode = SelectedFileToEncodeTextBlock.Text;
+        if (string.IsNullOrWhiteSpace(fileToEncode))
+        {
+            MessageBox.Show("Please select a file to encode!", "Attention", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        var key = HelperMethods.GetHashedKey(Encoding.UTF8.GetBytes(KeyTextBox.Text), KeyLength);
+       
+        var destinationFile = GetEncodedFilePath(fileToEncode);
+
+        try
+        {
+            rc5.EncodeFile(fileToEncode, key, destinationFile);
+            MessageBox.Show($"Data is encoded in file:\n{destinationFile}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            DecodeButton.IsEnabled = true;
+            SaveFileToDecodingButton.IsEnabled = true;
+        }
+        catch
+        {
+            MessageBox.Show("Error occured during encoding", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private static string GetEncodedFilePath(string fileToEncode)
+    {
+        var directoryPath = Path.GetDirectoryName(fileToEncode) ?? string.Empty;
+        var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(fileToEncode);
+        var fullPathWithoutExtension = Path.Combine(directoryPath, fileNameWithoutExtension);
+        var destinationFile = fullPathWithoutExtension + "-encoded" + Path.GetExtension(fileToEncode);
+
+        return destinationFile;
+    }
+
+
+    private void DecodeButton_Click(object sender, RoutedEventArgs e)
+    {
+        const int KeyLength = 16;
+        var rc5 = new RC5(wordSize: 32, roundsCount: 12, keyLengthInBytes: KeyLength);
+        var decodedPath = SelectedFileToDecodingTextBlock.Text;
+        if (string.IsNullOrWhiteSpace(SelectedFileToDecodingTextBlock.Text))
+        {
+            MessageBox.Show("Please select a file to decode.");
+            return;
+        }
+
+        var key = HelperMethods.GetHashedKey(Encoding.UTF8.GetBytes(KeyTextBoxConfirmation.Text), KeyLength);
+
+        try
+        {
+            rc5.DecodeFile(GetEncodedFilePath(SelectedFileToEncodeTextBlock.Text), key, decodedPath);
+            MessageBox.Show($"Data is decoded in file:\n{decodedPath}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch
+        {
+            MessageBox.Show("Key is not correct", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+       
+    }
+    #endregion
 
     private void AllowOnlyNumbersPreviewTextInput(object sender, System.Windows.Input.TextCompositionEventArgs e)
     {

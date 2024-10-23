@@ -8,6 +8,7 @@
     Title="Security algorithms"
     Width="1000"
     Height="600"
+    WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
     <Grid>
         <TabControl>
@@ -123,7 +124,7 @@
                         Margin="0,0,0,10"
                         HorizontalAlignment="Center"
                         FontSize="22"
-                        Text="Select input Type:" />
+                        Text="Select input type:" />
                     <ComboBox
                         Name="InputTypeComboBox"
                         Width="200"
@@ -161,7 +162,7 @@
                         <TextBlock
                             HorizontalAlignment="Center"
                             FontSize="22"
-                            Text="Or select a file to hash:" />
+                            Text="Select a file to compute hash from:" />
                         <Button
                             Name="SelectFileButton"
                             Width="100"
@@ -200,6 +201,90 @@
                         HorizontalAlignment="Center"
                         FontSize="22"
                         FontWeight="Bold" />
+                </StackPanel>
+            </TabItem>
+
+            <TabItem Header="RC5">
+                <StackPanel Margin="10">
+                    <Label
+                        HorizontalAlignment="Center"
+                        Content="Enter key"
+                        FontSize="22" />
+                    <TextBox
+                        Name="KeyTextBox"
+                        Width="400"
+                        Height="30"
+                        TextWrapping="Wrap" />
+
+                    <TextBlock
+                        Margin="0,20,0,10"
+                        HorizontalAlignment="Center"
+                        FontSize="22"
+                        Text="Select a file to encode:" />
+                    <Button
+                        Name="SelectFileToEncodeButton"
+                        Width="100"
+                        Click="SelectFileToEncodeButton_Click"
+                        Content="Select File" />
+                    <TextBlock
+                        Name="SelectedFileToEncodeTextBlock"
+                        Margin="0,10,0,0"
+                        HorizontalAlignment="Center"
+                        FontSize="18"
+                        FontWeight="Bold" />
+                    <Button
+                        Name="EncodeButton"
+                        Width="100"
+                        Margin="0,10,0,10"
+                        Click="EncodeButton_Click"
+                        Content="Encode"
+                        IsEnabled="False" />
+
+                    <TextBlock
+                        Name="IVKeyTextBlock"
+                        Width="400"
+                        Height="30"
+                        Margin="0,0,0,10"
+                        TextWrapping="Wrap" />
+
+                    <Label
+                        HorizontalAlignment="Center"
+                        Content="Re-enter key"
+                        FontSize="22" />
+                    <TextBox
+                        Name="KeyTextBoxConfirmation"
+                        Width="400"
+                        Height="30"
+                        Margin="0,0,0,10"
+                        TextWrapping="Wrap" />
+
+                    <TextBlock
+                        Margin="0,20,0,20"
+                        HorizontalAlignment="Center"
+                        FontSize="22"
+                        Text="Select a destination file for decoding result:" />
+                    <Button
+                        Name="SaveFileToDecodingButton"
+                        Width="100"
+                        Click="SaveFileToDecodingButton_Click"
+                        Content="Select File"
+                        IsEnabled="False" />
+
+                    <TextBlock
+                        Name="SelectedFileToDecodingTextBlock"
+                        Margin="0,10,0,0"
+                        HorizontalAlignment="Center"
+                        FontSize="18"
+                        FontWeight="Bold" />
+
+                    <Button
+                        Name="DecodeButton"
+                        Width="100"
+                        Margin="0,10,0,0"
+                        Click="DecodeButton_Click"
+                        Content="Decode"
+                        IsEnabled="False" />
+
                 </StackPanel>
             </TabItem>
         </TabControl>

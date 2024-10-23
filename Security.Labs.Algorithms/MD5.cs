@@ -105,7 +105,7 @@ public class MD5
         return string.Concat(GetByteString(a0), GetByteString(b0), GetByteString(c0), GetByteString(d0));
     }
 
-    public static bool VerifyFileIntegrity(string filePath, string md5HashFilePath)
+    public static (bool IsCheckPassed, string ActualResult, string ExpectedResult) VerifyFileIntegrity(string filePath, string md5HashFilePath)
     {
         var providedHash = File.ReadAllText(md5HashFilePath).Trim().ToLower();
 
@@ -113,7 +113,7 @@ public class MD5
 
         var fileHash = Calculate(fileBytes).ToLower();
 
-        return fileHash.Equals(providedHash, StringComparison.OrdinalIgnoreCase);
+        return (fileHash.Equals(providedHash, StringComparison.OrdinalIgnoreCase), fileHash, providedHash);
     }
 
     private static string GetByteString(uint x)
