@@ -69,18 +69,26 @@ public class RC5
         return word;
     }
 
-    private void EncodeBlock(byte[] inBytes, byte[] outBytes, int inStart, int outStart, Word[] s)
+    /// <summary>
+    /// Шифрування
+    /// </summary>
+    /// <param name="inBytes">вхідний масив байтів, який містить дані, що потрібно зашифрувати.</param>
+    /// <param name="outBytes">вихідний масив байтів, у який записуються зашифровані дані</param>
+    /// <param name="inStart">початковий індекс у масиві вхідних байтів, з якого починається блок для шифрування</param>
+    /// <param name="outStart">початковий індекс у масиві вихідних байтів, куди буде записано результат шифрування</param>
+    /// <param name="subkeys">масив підключів, який використовується для шифрування</param>
+    private void EncodeBlock(byte[] inBytes, byte[] outBytes, int inStart, int outStart, Word[] subkeys)
     {
         var a = CreateFromBytes(inBytes, inStart);
         var b = CreateFromBytes(inBytes, inStart + BytesPerWord(_wordSize));
 
-        a.Add(s[0]);
-        b.Add(s[1]);
+        a.Add(subkeys[0]);
+        b.Add(subkeys[1]);
 
         for (var i = 1; i < _roundsCount + 1; ++i)
         {
-            a.Xor(b).CLS(b.ToInt32()).Add(s[2 * i]);
-            b.Xor(a).CLS(a.ToInt32()).Add(s[2 * i + 1]);
+            a.Xor(b).CLS(b.ToInt32()).Add(subkeys[2 * i]);
+            b.Xor(a).CLS(a.ToInt32()).Add(subkeys[2 * i + 1]);
         }
 
         a.ToBytes(outBytes, outStart);
@@ -107,6 +115,13 @@ public class RC5
         b.ToBytes(outBuf, outStart + BytesPerWord(_wordSize));
     }
 
+    /// <summary>
+    /// Доповнення
+    /// </summary>
+    /// <param name="inBytes">Вхідний масив</param>
+    /// <returns>Масив байтів доповнення, який потім додається до вхідних даних перед шифруванням.</returns>
+    /// <remarks>Це означає, що вхідні дані повинні мати розмір, кратний розміру блоку. 
+    /// Якщо вхідні дані мають довжину, яка не відповідає цим вимогам, потрібно додати доповнення, щоб заповнити залишок і вирівняти довжину даних до кратної розміру блоку.</remarks>
     private byte[] GeneratePadding(byte[] inBytes)
     {
         var paddingLength = BytesPerWord(_wordSize) * 2 - inBytes.Length % (BytesPerWord(_wordSize) * 2);
@@ -144,7 +159,7 @@ public class RC5
         return result;
     }
 
-    private Word[] GetExtendedKeyTable(byte[] key)
+    private Word[] GetSubkeys(byte[] key)
     {
         var keysWordArrLength = key.Length % BytesPerWord(_wordSize) > 0
             ? key.Length / BytesPerWord(_wordSize) + 1
@@ -202,12 +217,13 @@ public class RC5
     public byte[] Encode(byte[] input, byte[] key)
     {
         var paddedInputData = input.Concat(GeneratePadding(input)).ToArray();
-        var blockSizeInBytes = BytesPerWord(_wordSize) * 2;
+        var blockSizeInBytes = BytesPerWord(_wordSize) * 2; // 2w
 
-        var extendedKeyTable = GetExtendedKeyTable(key);
+        var extendedKeyTable = GetSubkeys(key);
         var initializationVector = GenerateRandomBytesForIV().Take(blockSizeInBytes).ToArray();
         var encryptedData = new byte[initializationVector.Length + paddedInputData.Length];
 
+        // start RC5-CBC-Pad
         EncodeBlock(initializationVector, encryptedData, 0, 0, extendedKeyTable);
 
         for (int i = 0; i < paddedInputData.Length; i += blockSizeInBytes)
@@ -228,7 +244,8 @@ public class RC5
     public byte[] Decode(byte[] input, byte[] key)
     {
         var blockSizeInBytes = BytesPerWord(_wordSize) * 2;
-        var expandedKeyTable = GetExtendedKeyTable(key);
+
+        var expandedKeyTable = GetSubkeys(key);
         var buffer = new byte[blockSizeInBytes];
         var decodedFileContent = new byte[input.Length - buffer.Length];
 
@@ -239,7 +256,7 @@ public class RC5
             var cn = new byte[blockSizeInBytes];
             Array.Copy(input, i, cn, 0, cn.Length);
 
-            DecodeBlock(cn, decodedFileContent, 0, i - blockSizeInBytes, expandedKeyTable);
+            DecodeBlock(inBuf: cn, outBuf: decodedFileContent, 0, i - blockSizeInBytes, expandedKeyTable);
 
             Xor(decodedFileContent, buffer, i - blockSizeInBytes, 0, cn.Length);
 

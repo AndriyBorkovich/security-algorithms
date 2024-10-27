@@ -49,5 +49,4 @@ public class RC5Tests
             [16, 8, 8],
         ];
     }
-
 }
