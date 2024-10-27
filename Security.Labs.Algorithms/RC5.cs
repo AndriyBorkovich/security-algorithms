@@ -1,4 +1,5 @@
 using Security.Labs.Algorithms.Words;
+using System.Diagnostics;
 
 namespace Security.Labs.Algorithms;
 
@@ -281,5 +282,38 @@ public class RC5
         var data = File.ReadAllBytes(originFilePath);
         var decodedData = Decode(data, key);
         File.WriteAllBytes(decodedPathDestination, decodedData);
+    }
+
+    public int EncodeFileBenchmark(string filePath, byte[] key, string encodedPath)
+    {
+        var timer = new Stopwatch();
+        var data = File.ReadAllBytes(filePath);
+
+        timer.Start();
+        var encodedData = Encode(data, key);
+        timer.Stop();
+
+        TimeSpan timeTaken = timer.Elapsed;
+
+        File.WriteAllBytes(encodedPath, encodedData);
+
+        return timeTaken.Milliseconds;
+    }
+
+    public int DecryptFileBenchmark(string filePath, byte[] key, string decodedPath)
+    {
+        var timer = new Stopwatch();
+
+        var data = File.ReadAllBytes(filePath);
+
+        timer.Start();
+        var decodedData = Decode(data, key);
+        timer.Stop();
+
+        TimeSpan timeTaken = timer.Elapsed;
+
+        File.WriteAllBytes(decodedPath, decodedData);
+
+        return timeTaken.Milliseconds;
     }
 }

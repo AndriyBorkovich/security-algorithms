@@ -20,6 +20,17 @@ public partial class MainWindow : Window
     private LehmerGenerator generator;
     private string selectedFilePathForMD5;
 
+    private string _enteredKeyFilePath;
+    private string _reenteredKeyFilePath;
+
+    private readonly RSA _rsa = new();
+    private string _publicKeyPath;
+    private string _privateKeyPath;
+    private string _encryptFilePath;
+    private string _decryptFilePath;
+    private string _encryptedFilePath;
+    private string _decryptedFilePath;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -254,6 +265,70 @@ public partial class MainWindow : Window
     #endregion MD5
 
     #region RC5
+
+    private void KeyInputMethodComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (KeyTextBox != null && LoadKeyFromFileButton != null)
+        {
+            if (KeyInputMethodComboBox.SelectedIndex == 0) // "Enter manually"
+            {
+                KeyTextBox.Visibility = Visibility.Visible;
+                LoadKeyFromFileButton.Visibility = Visibility.Collapsed;
+            }
+            else if (KeyInputMethodComboBox.SelectedIndex == 1) // "Load from file"
+            {
+                KeyTextBox.Visibility = Visibility.Collapsed;
+                LoadKeyFromFileButton.Visibility = Visibility.Visible;
+            }
+        }
+    }
+
+    private void LoadKeyFromFileButton_Click(object sender, RoutedEventArgs e)
+    {
+        var openFileDialog = new OpenFileDialog
+        {
+            Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*"
+        };
+
+        if (openFileDialog.ShowDialog() == true)
+        {
+            _enteredKeyFilePath = openFileDialog.FileName;
+
+            MessageBox.Show("Key loaded from file successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+    }
+
+    private void ReenterKeyInputMethodComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (KeyTextBoxConfirmation != null && LoadReenterKeyFromFileButton != null)
+        {
+            if (ReenterKeyInputMethodComboBox.SelectedIndex == 0) // "Enter manually"
+            {
+                KeyTextBoxConfirmation.Visibility = Visibility.Visible;
+                LoadReenterKeyFromFileButton.Visibility = Visibility.Collapsed;
+            }
+            else if (ReenterKeyInputMethodComboBox.SelectedIndex == 1) // "Load from file"
+            {
+                KeyTextBoxConfirmation.Visibility = Visibility.Collapsed;
+                LoadReenterKeyFromFileButton.Visibility = Visibility.Visible;
+            }
+        }
+    }
+
+    private void LoadReenterKeyFromFileButton_Click(object sender, RoutedEventArgs e)
+    {
+        var openFileDialog = new OpenFileDialog
+        {
+            Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*"
+        };
+
+        if (openFileDialog.ShowDialog() == true)
+        {
+            _reenteredKeyFilePath = openFileDialog.FileName;
+            MessageBox.Show("Re-entered key loaded from file successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+    }
+
     private void SelectFileToEncodeButton_Click(object sender, RoutedEventArgs e)
     {
         var openFileDialog = new OpenFileDialog
@@ -296,16 +371,17 @@ public partial class MainWindow : Window
             return;
         }
 
-        var key = HelperMethods.GetHashedKey(Encoding.UTF8.GetBytes(KeyTextBox.Text), KeyLength);
+        var key = KeyInputMethodComboBox.SelectedIndex == 0 ? HelperMethods.GetHashedKey(Encoding.UTF8.GetBytes(KeyTextBox.Text), KeyLength) : File.ReadAllBytes(_enteredKeyFilePath);
        
-        var destinationFile = GetEncodedFilePath(fileToEncode);
+        var destinationFile = GetProcessedFilePath(fileToEncode);
 
         try
         {
-            rc5.EncodeFile(fileToEncode, key, destinationFile);
+            var elapsedTime = rc5.EncodeFileBenchmark(fileToEncode, key, destinationFile);
             MessageBox.Show($"Data is encoded in file:\n{destinationFile}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             DecodeButton.IsEnabled = true;
             SaveFileToDecodingButton.IsEnabled = true;
+            EncodingTimeTextBlock.Text = $"Elapsed: {elapsedTime} ms";
         }
         catch
         {
@@ -313,12 +389,12 @@ public partial class MainWindow : Window
         }
     }
 
-    private static string GetEncodedFilePath(string fileToEncode)
+    private static string GetProcessedFilePath(string fileToProcess)
     {
-        var directoryPath = Path.GetDirectoryName(fileToEncode) ?? string.Empty;
-        var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(fileToEncode);
+        var directoryPath = Path.GetDirectoryName(fileToProcess) ?? string.Empty;
+        var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(fileToProcess);
         var fullPathWithoutExtension = Path.Combine(directoryPath, fileNameWithoutExtension);
-        var destinationFile = fullPathWithoutExtension + "-encoded" + Path.GetExtension(fileToEncode);
+        var destinationFile = fullPathWithoutExtension + "-encoded" + Path.GetExtension(fileToProcess);
 
         return destinationFile;
     }
@@ -335,12 +411,13 @@ public partial class MainWindow : Window
             return;
         }
 
-        var key = HelperMethods.GetHashedKey(Encoding.UTF8.GetBytes(KeyTextBoxConfirmation.Text), KeyLength);
+        var key = ReenterKeyInputMethodComboBox.SelectedIndex == 0 ? HelperMethods.GetHashedKey(Encoding.UTF8.GetBytes(KeyTextBoxConfirmation.Text), KeyLength) : File.ReadAllBytes(_reenteredKeyFilePath) ;
 
         try
         {
-            rc5.DecodeFile(GetEncodedFilePath(SelectedFileToEncodeTextBlock.Text), key, decodedPath);
+            var elapsedTime = rc5.DecryptFileBenchmark(GetProcessedFilePath(SelectedFileToEncodeTextBlock.Text), key, decodedPath);
             MessageBox.Show($"Data is decoded in file:\n{decodedPath}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            DecodingTimeTextBlock.Text = $"Elapsed: {elapsedTime} ms";
         }
         catch
         {
@@ -349,6 +426,120 @@ public partial class MainWindow : Window
        
     }
     #endregion
+
+    #region RSA
+    private void GenerateKeyPair_Click(object sender, RoutedEventArgs e)
+    {
+        var saveDialog = new SaveFileDialog { Filter = "Key files (*.key)|*.key" };
+        if (saveDialog.ShowDialog() == true)
+        {
+            _rsa.GeneteKeyPair(saveDialog.FileName + "_public.key", saveDialog.FileName + "_private.key");
+            MessageBox.Show("Key pair generated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+    }
+
+    private void SelectPublicKey_Click(object sender, RoutedEventArgs e)
+    {
+        var openDialog = new OpenFileDialog { Filter = "Public Key (*.key)|*.key" };
+        if (openDialog.ShowDialog() == true)
+        {
+            _publicKeyPath = openDialog.FileName;
+        }
+    }
+
+    private void SelectPrivateKey_Click(object sender, RoutedEventArgs e)
+    {
+        var openDialog = new OpenFileDialog { Filter = "Private Key (*.key)|*.key" };
+        if (openDialog.ShowDialog() == true)
+        {
+            _privateKeyPath = openDialog.FileName;
+        }
+    }
+
+    private void SelectEncryptFile_Click(object sender, RoutedEventArgs e)
+    {
+        var openDialog = new OpenFileDialog { Filter = "All Files (*.*)|*.*" };
+        if (openDialog.ShowDialog() == true)
+        {
+            _encryptFilePath = openDialog.FileName;
+        }
+    }
+
+    private void SelectEncryptedFilePath_Click(object sender, RoutedEventArgs e)
+    {
+        var saveDialog = new SaveFileDialog { Filter = "Binary Files (*.bin)|*.bin" };
+        if (saveDialog.ShowDialog() == true)
+        {
+            _encryptedFilePath = saveDialog.FileName;
+        }
+    }
+
+    private void EncryptFile_Click(object sender, RoutedEventArgs e)
+    {
+        if (!File.Exists(_encryptFilePath) || !File.Exists(_publicKeyPath) || string.IsNullOrEmpty(_encryptedFilePath))
+        {
+            MessageBox.Show("Please select a file, public key, and output path for encryption.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            return;
+        }
+
+        try
+        {
+            var encryptionTime = _rsa.EncryptFileBenchmark(_encryptFilePath, _publicKeyPath, _encryptedFilePath);
+            EncryptionTimeTextBox.Text = encryptionTime.ToString();
+            MessageBox.Show("File encrypted successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error during ecryption: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private void SelectDecryptFile_Click(object sender, RoutedEventArgs e)
+    {
+        var openDialog = new OpenFileDialog { Filter = "Binary Files (*.bin)|*.bin" };
+        if (openDialog.ShowDialog() == true)
+        {
+            _decryptFilePath = openDialog.FileName;
+        }
+    }
+
+    private void SelectDecryptedFilePath_Click(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrEmpty(_decryptFilePath))
+        {
+            MessageBox.Show("Please select an encrypted file first to determine the original format.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            return;
+        }
+
+        var originalExtension = Path.GetExtension(_decryptFilePath.Replace(".bin", ""));
+        var saveDialog = new SaveFileDialog { Filter = $"Original Format (*{originalExtension})|*{originalExtension}" };
+        if (saveDialog.ShowDialog() == true)
+        {
+            _decryptedFilePath = saveDialog.FileName;
+        }
+    }
+
+    private void DecryptFile_Click(object sender, RoutedEventArgs e)
+    {
+        if (!File.Exists(_decryptFilePath) || !File.Exists(_privateKeyPath) || string.IsNullOrEmpty(_decryptedFilePath))
+        {
+            MessageBox.Show("Please select an encrypted file, private key, and output path for decryption.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            return;
+        }
+
+        try
+        {
+            var decryptionTime = _rsa.DecryptFileBenchmark(_decryptFilePath, _privateKeyPath, _decryptedFilePath);
+            DecryptionTimeTextBox.Text = decryptionTime.ToString();
+            MessageBox.Show("File decrypted successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error during decryption: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        
+    }
+    #endregion RSA
 
     private void AllowOnlyNumbersPreviewTextInput(object sender, System.Windows.Input.TextCompositionEventArgs e)
     {
