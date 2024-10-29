@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace Security.Labs;
 
@@ -484,7 +485,7 @@ public partial class MainWindow : Window
 
         try
         {
-            var encryptionTime = _rsa.EncryptFileBenchmark(_encryptFilePath, _publicKeyPath, _encryptedFilePath);
+            var encryptionTime = _rsa.EncryptFile(_encryptFilePath, _publicKeyPath, _encryptedFilePath);
             EncryptionTimeTextBox.Text = encryptionTime.ToString();
             MessageBox.Show("File encrypted successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
         }
@@ -529,7 +530,7 @@ public partial class MainWindow : Window
 
         try
         {
-            var decryptionTime = _rsa.DecryptFileBenchmark(_decryptFilePath, _privateKeyPath, _decryptedFilePath);
+            var decryptionTime = _rsa.DecryptFile(_decryptFilePath, _privateKeyPath, _decryptedFilePath);
             DecryptionTimeTextBox.Text = decryptionTime.ToString();
             MessageBox.Show("File decrypted successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
         }
@@ -541,7 +542,7 @@ public partial class MainWindow : Window
     }
     #endregion RSA
 
-    private void AllowOnlyNumbersPreviewTextInput(object sender, System.Windows.Input.TextCompositionEventArgs e)
+    private void AllowOnlyNumbersPreviewTextInput(object sender, TextCompositionEventArgs e)
     {
         var regex = new Regex("[^0-9]+"); // Only allow digits
         e.Handled = regex.IsMatch(e.Text);
