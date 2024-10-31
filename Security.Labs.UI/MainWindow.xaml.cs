@@ -8,6 +8,9 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using MD5 = Security.Labs.Algorithms.MD5;
+using RSA = Security.Labs.Algorithms.RSA;
+using DSA = Security.Labs.Algorithms.DSA;
 
 namespace Security.Labs;
 
@@ -16,21 +19,35 @@ namespace Security.Labs;
 /// </summary>
 public partial class MainWindow : Window
 {
+    #region LCG_Fields
     public ObservableCollection<long> RandomNumbers { get; set; }
     private readonly BackgroundWorker backgroundWorker;
     private LehmerGenerator generator;
-    private string selectedFilePathForMD5;
+    #endregion
+    
+    #region MD5_Fields
+    private string _selectedFilePathForMD5;
+    #endregion
 
+    #region RC5_Fields
     private string _enteredKeyFilePath;
     private string _reenteredKeyFilePath;
+    #endregion
 
-    private readonly RSA _rsa = new();
+    #region RSA_Fields
     private string _publicKeyPath;
     private string _privateKeyPath;
     private string _encryptFilePath;
     private string _decryptFilePath;
     private string _encryptedFilePath;
     private string _decryptedFilePath;
+    #endregion
+
+    #region DSA_Fields
+    private readonly DSA _dsa = new();
+    private string _selectedFilePath;
+    private string _signature;
+    #endregion
 
     public MainWindow()
     {
@@ -211,14 +228,14 @@ public partial class MainWindow : Window
         var openFileDialog = new OpenFileDialog();
         if (openFileDialog.ShowDialog() == true)
         {
-            selectedFilePathForMD5 = openFileDialog.FileName;
-            SelectedFileTextBlock.Text = $"Selected file: {selectedFilePathForMD5}";
+            _selectedFilePathForMD5 = openFileDialog.FileName;
+            SelectedFileTextBlock.Text = $"Selected file: {_selectedFilePathForMD5}";
         }
     }
 
     private void ComputeMD5ForFileButton_Click(object sender, RoutedEventArgs e)
     {
-        if (string.IsNullOrEmpty(selectedFilePathForMD5))
+        if (string.IsNullOrEmpty(_selectedFilePathForMD5))
         {
             MessageBox.Show("Please select a file first.");
             return;
@@ -226,7 +243,7 @@ public partial class MainWindow : Window
 
         try
         {
-            var fileBytes = File.ReadAllBytes(selectedFilePathForMD5);
+            var fileBytes = File.ReadAllBytes(_selectedFilePathForMD5);
             ResultTextBlock.Text = $"Hash: {MD5.Calculate(fileBytes)}";
         }
         catch (Exception ex)
@@ -237,7 +254,7 @@ public partial class MainWindow : Window
 
     private void InputTypeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        ResultTextBlock.Text = string.Empty; selectedFilePathForMD5 = string.Empty; SelectedFileTextBlock.Text = string.Empty;
+        ResultTextBlock.Text = string.Empty; _selectedFilePathForMD5 = string.Empty; SelectedFileTextBlock.Text = string.Empty;
         var selectedInput = (ComboBoxItem)((ComboBox)sender).SelectedItem;
         if (selectedInput.Content.ToString() == "Text")
         {
@@ -257,7 +274,7 @@ public partial class MainWindow : Window
         if (openFileDialog.ShowDialog() == true)
         {
             var filePathToCompare = openFileDialog.FileName;
-            var result = MD5.VerifyFileIntegrity(selectedFilePathForMD5, filePathToCompare);
+            var result = MD5.VerifyFileIntegrity(_selectedFilePathForMD5, filePathToCompare);
             ResultTextBlock.Text = string.Empty;
             IntegrityResulTextBlock.Text = $"Check was {(result.IsCheckPassed ? "passed" : "not passed")}\n";
             IntegrityResulTextBlock.Text += $"Actual: {result.ActualResult}\nExpected: {result.ExpectedResult}";
@@ -434,7 +451,7 @@ public partial class MainWindow : Window
         var saveDialog = new SaveFileDialog { Filter = "Key files (*.key)|*.key" };
         if (saveDialog.ShowDialog() == true)
         {
-            _rsa.GeneteKeyPair(saveDialog.FileName + "_public.key", saveDialog.FileName + "_private.key");
+            RSA.GeneteKeyPair(saveDialog.FileName + "_public.key", saveDialog.FileName + "_private.key");
             MessageBox.Show("Key pair generated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
         }
     }
@@ -485,7 +502,7 @@ public partial class MainWindow : Window
 
         try
         {
-            var encryptionTime = _rsa.EncryptFile(_encryptFilePath, _publicKeyPath, _encryptedFilePath);
+            var encryptionTime = RSA.EncryptFile(_encryptFilePath, _publicKeyPath, _encryptedFilePath);
             EncryptionTimeTextBox.Text = encryptionTime.ToString();
             MessageBox.Show("File encrypted successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
         }
@@ -530,7 +547,7 @@ public partial class MainWindow : Window
 
         try
         {
-            var decryptionTime = _rsa.DecryptFile(_decryptFilePath, _privateKeyPath, _decryptedFilePath);
+            var decryptionTime = RSA.DecryptFile(_decryptFilePath, _privateKeyPath, _decryptedFilePath);
             DecryptionTimeTextBox.Text = decryptionTime.ToString();
             MessageBox.Show("File decrypted successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
         }
@@ -541,6 +558,184 @@ public partial class MainWindow : Window
         
     }
     #endregion RSA
+
+    #region DSA
+
+    private void SelectPublicKeyPath_Click(object sender, RoutedEventArgs e)
+    {
+        var saveFileDialog = new SaveFileDialog
+        {
+            Filter = "Keys (*.key)|*.key",
+            Title = "Choose save location for public key"
+        };
+        if (saveFileDialog.ShowDialog() == true)
+        {
+            PublicKeyPathTextBox.Text = saveFileDialog.FileName;
+        }
+    }
+
+    private void SelectPrivateKeyPath_Click(object sender, RoutedEventArgs e)
+    {
+        var saveFileDialog = new SaveFileDialog
+        {
+            Filter = "Keys (*.key)|*.key",
+            Title = "Choose save location for private key"
+        };
+        if (saveFileDialog.ShowDialog() == true)
+        {
+            PrivateKeyPathTextBox.Text = saveFileDialog.FileName;
+        }
+    }
+
+    private void ExportKeys_Click(object sender, RoutedEventArgs e)
+    {
+        var publicKeyPath = PublicKeyPathTextBox.Text;
+        var privateKeyPath = PrivateKeyPathTextBox.Text;
+
+        if (string.IsNullOrWhiteSpace(publicKeyPath) || string.IsNullOrWhiteSpace(privateKeyPath))
+        {
+            MessageBox.Show("Please choose paths for keys export!", "Attention", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        _dsa.ExportKeys(true, true, publicKeyPath, privateKeyPath);
+        MessageBox.Show("Keys were exported successfully");
+    }
+
+    private void SelectImportPublicKeyPath_Click(object sender, RoutedEventArgs e)
+    {
+        var openFileDialog = new OpenFileDialog
+        {
+            Filter = "Keys (*.key)|*.key",
+            Title = "Select public key to import"
+        };
+        if (openFileDialog.ShowDialog() == true)
+        {
+            ImportPublicKeyPathTextBox.Text = openFileDialog.FileName;
+        }
+    }
+
+    private void SelectImportPrivateKeyPath_Click(object sender, RoutedEventArgs e)
+    {
+        var openFileDialog = new OpenFileDialog
+        {
+            Filter = "Keys (*.key)|*.key",
+            Title = "Select private key to import"
+        };
+        if (openFileDialog.ShowDialog() == true)
+        {
+            ImportPrivateKeyPathTextBox.Text = openFileDialog.FileName;
+        }
+    }
+
+    private void ImportKeys_Click(object sender, RoutedEventArgs e)
+    {
+        var publicKeyPath = ImportPublicKeyPathTextBox.Text;
+        var privateKeyPath = ImportPrivateKeyPathTextBox.Text;
+
+        if (string.IsNullOrWhiteSpace(publicKeyPath) || string.IsNullOrWhiteSpace(privateKeyPath))
+        {
+            MessageBox.Show("Please choose paths for keys import!", "Attention", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        _dsa.ImportKeys(true, true, publicKeyPath, privateKeyPath);
+        MessageBox.Show("Keys were imported successfully!");
+    }
+
+    private void OnInputTypeChanged(object sender, RoutedEventArgs e)
+    {
+        if (DsaInputTypeComboBox.SelectedIndex < 0) return;
+
+        if (DsaInputText is not null && DsaSelectFileButton is not null)
+        {
+            if (DsaInputTypeComboBox.SelectedIndex == 0)
+            {
+                DsaInputText.Visibility = Visibility.Visible;
+                DsaSelectFileButton.Visibility = Visibility.Collapsed;
+            }
+            else if (DsaInputTypeComboBox.SelectedIndex == 1)
+            {
+                DsaInputText.Visibility = Visibility.Collapsed;
+                DsaSelectFileButton.Visibility = Visibility.Visible;
+            }
+        }
+    }
+
+    private void OnSign(object sender, RoutedEventArgs e)
+    {
+        if (DsaInputTypeComboBox.SelectedIndex == 0)
+        {
+            var text = DsaInputText.Text;
+            _signature = _dsa.SignData(text);
+        }
+        else if (DsaInputTypeComboBox.SelectedIndex == 1 && !string.IsNullOrEmpty(_selectedFilePath))
+        {
+            var fileData = File.ReadAllText(_selectedFilePath);
+            _signature = _dsa.SignData(fileData);
+        }
+
+        SignatureDisplay.Text = $"Signature: {_signature}";
+    }
+
+    private void OnSaveSignature(object sender, RoutedEventArgs e)
+    {
+        if (!string.IsNullOrEmpty(_signature))
+        {
+            var saveFileDialog = new SaveFileDialog { FileName = "signature.txt" };
+            if (saveFileDialog.ShowDialog() == true)
+            {
+                File.WriteAllText(saveFileDialog.FileName, _signature);
+            }
+        }
+        else
+        {
+            MessageBox.Show("Signature is empty", "Attention", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private void OnSelectFileToSign(object sender, RoutedEventArgs e)
+    {
+        var openFileDialog = new OpenFileDialog();
+        if (openFileDialog.ShowDialog() == true)
+        {
+            _selectedFilePath = openFileDialog.FileName;
+        }
+    }
+
+    private void OnSelectFileToVerify(object sender, RoutedEventArgs e)
+    {
+        var openFileDialog = new OpenFileDialog();
+        if (openFileDialog.ShowDialog() == true)
+        {
+            _selectedFilePath = openFileDialog.FileName;
+        }
+    }
+
+    private void OnSelectSignatureFile(object sender, RoutedEventArgs e)
+    {
+        var openFileDialog = new OpenFileDialog();
+        if (openFileDialog.ShowDialog() == true)
+        {
+            var signaturePath = openFileDialog.FileName;
+            _signature = File.ReadAllText(signaturePath);
+        }
+    }
+
+    private void OnVerifyFileSignature(object sender, RoutedEventArgs e)
+    {
+        if (!string.IsNullOrEmpty(_selectedFilePath) && !string.IsNullOrEmpty(_signature))
+        {
+            var data = File.ReadAllText(_selectedFilePath);
+            var result = _dsa.VerifySignature(data, _signature);
+            VerificationResultText.Text = result ? "Signature is valid." : "Signature is invalid.";
+        }
+        else
+        {
+            MessageBox.Show("Please select a file and its signature for verification.");
+        }
+    }
+    #endregion
 
     private void AllowOnlyNumbersPreviewTextInput(object sender, TextCompositionEventArgs e)
     {

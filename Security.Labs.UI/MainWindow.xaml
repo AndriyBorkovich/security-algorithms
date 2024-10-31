@@ -392,6 +392,147 @@
                     <TextBox x:Name="DecryptionTimeTextBox" IsReadOnly="True" />
                 </StackPanel>
             </TabItem>
+            <TabItem Header="DSA">
+
+                <StackPanel
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Top"
+                    Orientation="Vertical">
+                    <StackPanel Margin="0,10,0,0" Orientation="Horizontal">
+                        <Button
+                            Width="150"
+                            Click="SelectPublicKeyPath_Click"
+                            Content="Select path for public key" />
+                        <TextBox
+                            x:Name="PublicKeyPathTextBox"
+                            Width="350"
+                            Margin="10,0,0,0"
+                            IsReadOnly="True" />
+                    </StackPanel>
+                    <StackPanel Margin="0,10,0,0" Orientation="Horizontal">
+                        <Button
+                            Width="150"
+                            Click="SelectPrivateKeyPath_Click"
+                            Content="Select path for private key" />
+                        <TextBox
+                            x:Name="PrivateKeyPathTextBox"
+                            Width="350"
+                            Margin="10,0,0,0"
+                            IsReadOnly="True" />
+                    </StackPanel>
+                    <StackPanel Margin="0,10,0,0" Orientation="Horizontal">
+                        <Button
+                            Width="100"
+                            Click="ExportKeys_Click"
+                            Content="Export keys" />
+                    </StackPanel>
+
+                    <StackPanel Margin="0,20,0,0" Orientation="Horizontal">
+                        <Button
+                            Width="180"
+                            Click="SelectImportPublicKeyPath_Click"
+                            Content="Select public key file for import" />
+                        <TextBox
+                            x:Name="ImportPublicKeyPathTextBox"
+                            Width="350"
+                            Margin="10,0,0,0"
+                            IsReadOnly="True" />
+                    </StackPanel>
+                    <StackPanel Margin="0,10,0,0" Orientation="Horizontal">
+                        <Button
+                            Width="180"
+                            Click="SelectImportPrivateKeyPath_Click"
+                            Content="Select private key file for import" />
+                        <TextBox
+                            x:Name="ImportPrivateKeyPathTextBox"
+                            Width="350"
+                            Margin="10,0,0,0"
+                            IsReadOnly="True" />
+                    </StackPanel>
+                    <StackPanel Margin="0,10,0,0" Orientation="Horizontal">
+                        <Button
+                            Width="100"
+                            Click="ImportKeys_Click"
+                            Content="Import keys" />
+                    </StackPanel>
+                    <TextBlock
+                        Margin="0,0,0,10"
+                        HorizontalAlignment="Center"
+                        FontSize="16"
+                        FontWeight="Bold"
+                        Text="DSA digital sign" />
+                    <Label
+                        Margin="0,0,0,10"
+                        HorizontalAlignment="Center"
+                        Content="Choose input type:"
+                        FontSize="14" />
+                    <ComboBox
+                        x:Name="DsaInputTypeComboBox"
+                        Width="200"
+                        SelectedIndex="0"
+                        SelectionChanged="OnInputTypeChanged">
+                        <ComboBoxItem Content="Text" />
+                        <ComboBoxItem Content="File" />
+                    </ComboBox>
+
+                    <TextBox
+                        x:Name="DsaInputText"
+                        Width="400"
+                        Height="50"
+                        Margin="0,10,0,10"
+                        TextWrapping="Wrap"
+                        Visibility="Visible" />
+
+                    <Button
+                        x:Name="DsaSelectFileButton"
+                        Width="150"
+                        Margin="0,10,0,10"
+                        Click="OnSelectFileToSign"
+                        Content="Select File to Sign"
+                        Visibility="Collapsed" />
+
+                    <Button
+                        Width="100"
+                        Margin="0,10,0,10"
+                        Click="OnSign"
+                        Content="Sign" />
+
+                    <TextBlock
+                        x:Name="SignatureDisplay"
+                        Margin="0,10,0,10"
+                        FontSize="14"
+                        TextWrapping="Wrap" />
+
+                    <Button
+                        Width="150"
+                        Margin="0,10,0,10"
+                        Click="OnSaveSignature"
+                        Content="Save Signature" />
+
+                    <Separator Height="10" Margin="0,10,0,10" />
+
+                    <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                        <Button
+                            Width="150"
+                            Click="OnSelectFileToVerify"
+                            Content="Select File to Verify" />
+                        <Button
+                            Width="150"
+                            Margin="10,0,0,0"
+                            Click="OnSelectSignatureFile"
+                            Content="Select Signature File" />
+                        <Button
+                            Width="150"
+                            Margin="10,0,0,0"
+                            Click="OnVerifyFileSignature"
+                            Content="Verify Signature" />
+                    </StackPanel>
+                    <TextBlock
+                        x:Name="VerificationResultText"
+                        Margin="0,10,0,0"
+                        FontSize="14" />
+                </StackPanel>
+            </TabItem>
         </TabControl>
     </Grid>
 

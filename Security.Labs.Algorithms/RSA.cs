@@ -3,9 +3,9 @@ using System.Diagnostics;
 
 namespace Security.Labs.Algorithms;
 
-public class RSA
+public static class RSA
 {
-    public void GeneteKeyPair(string publicKeyPath, string privateKeyPath)
+    public static void GeneteKeyPair(string publicKeyPath, string privateKeyPath)
     {
         using var rsa = new RSACryptoServiceProvider(2048);
 
@@ -16,25 +16,27 @@ public class RSA
         File.WriteAllBytes(privateKeyPath, privateKey);
     }
 
-    public byte[] Encrypt(byte[] dataToEncrypt, byte[] publicKey)
+    public static byte[] Encrypt(byte[] dataToEncrypt, byte[] publicKey)
     {
         using var rsa = new RSACryptoServiceProvider(2048);
+
         rsa.ImportRSAPublicKey(publicKey, out _);
         var encryptedData = rsa.Encrypt(dataToEncrypt, true);
 
         return encryptedData;
     }
 
-    public byte[] Decrypt(byte[] dataToDecrypt, byte[] privateKey)
+    public static byte[] Decrypt(byte[] dataToDecrypt, byte[] privateKey)
     {
         using var rsa = new RSACryptoServiceProvider(2048);
+
         rsa.ImportRSAPrivateKey(privateKey, out _);
         var decryptedData = rsa.Decrypt(dataToDecrypt, true);
         
         return decryptedData;
     }
 
-    public int EncryptFile(string filePath, string publicKeyPath, string encodedPath)
+    public static int EncryptFile(string filePath, string publicKeyPath, string encodedPath)
     {
         var timer = new Stopwatch();
 
@@ -51,7 +53,7 @@ public class RSA
         return timeTaken.Milliseconds;
     }
 
-    public int DecryptFile(string filePath, string privateKeyPath, string decodedPath)
+    public static int DecryptFile(string filePath, string privateKeyPath, string decodedPath)
     {
         var timer = new Stopwatch();
 
