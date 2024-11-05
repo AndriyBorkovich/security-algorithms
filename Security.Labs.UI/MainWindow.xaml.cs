@@ -598,7 +598,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        _dsa.ExportKeys(true, true, publicKeyPath, privateKeyPath);
+        _dsa.ExportKeys(publicKeyPath, privateKeyPath);
         MessageBox.Show("Keys were exported successfully");
     }
 
@@ -639,7 +639,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        _dsa.ImportKeys(true, true, publicKeyPath, privateKeyPath);
+        _dsa.ImportKeys(publicKeyPath, privateKeyPath);
         MessageBox.Show("Keys were imported successfully!");
     }
 

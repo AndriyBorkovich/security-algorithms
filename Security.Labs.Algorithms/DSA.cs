@@ -1,4 +1,5 @@
-﻿using System.Security.Cryptography;
+﻿using System.Diagnostics;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Security.Labs.Algorithms;
@@ -7,34 +8,22 @@ public class DSA
 {
     private readonly DSACryptoServiceProvider _dsa = new();
 
-    public void ExportKeys(bool exportPublic, bool exportPrivate, string publicKeyPath, string privateKeyPath)
+    public void ExportKeys(string publicKeyPath, string privateKeyPath)
     {
-        if (exportPublic)
-        {
-            var publicKey = _dsa.ExportSubjectPublicKeyInfo();
-            File.WriteAllBytes(publicKeyPath, publicKey);
-        }
+        var publicKey = _dsa.ExportSubjectPublicKeyInfo();
+        File.WriteAllBytes(publicKeyPath, publicKey);
 
-        if (exportPrivate)
-        {
-            var privateKey = _dsa.ExportPkcs8PrivateKey();
-            File.WriteAllBytes(privateKeyPath, privateKey);
-        }
+        var privateKey = _dsa.ExportPkcs8PrivateKey();
+        File.WriteAllBytes(privateKeyPath, privateKey);
     }
 
-    public void ImportKeys(bool importPublic, bool importPrivate, string publicKeyPath, string privateKeyPath)
+    public void ImportKeys( string publicKeyPath, string privateKeyPath)
     {
-        if (importPublic)
-        {
-            var publicKey = File.ReadAllBytes(publicKeyPath);
-            _dsa.ImportSubjectPublicKeyInfo(publicKey, out _);
-        }
-
-        if (importPrivate)
-        {
-            var privateKey = File.ReadAllBytes(privateKeyPath);
-            _dsa.ImportPkcs8PrivateKey(privateKey, out _);
-        }
+        var publicKey = File.ReadAllBytes(publicKeyPath);
+        _dsa.ImportSubjectPublicKeyInfo(publicKey, out _);
+        
+        var privateKey = File.ReadAllBytes(privateKeyPath);
+        _dsa.ImportPkcs8PrivateKey(privateKey, out _);
     }
 
     public string SignData(string data)
