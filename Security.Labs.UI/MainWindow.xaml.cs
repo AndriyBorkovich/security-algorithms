@@ -598,8 +598,15 @@ public partial class MainWindow : Window
             return;
         }
 
-        _dsa.ExportKeys(publicKeyPath, privateKeyPath);
-        MessageBox.Show("Keys were exported successfully");
+        try
+        {
+            _dsa.ExportKeys(publicKeyPath, privateKeyPath);
+            MessageBox.Show("Keys were exported successfully");
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error during import:{ex.Message}!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private void SelectImportPublicKeyPath_Click(object sender, RoutedEventArgs e)
@@ -639,8 +646,16 @@ public partial class MainWindow : Window
             return;
         }
 
-        _dsa.ImportKeys(publicKeyPath, privateKeyPath);
-        MessageBox.Show("Keys were imported successfully!");
+        try
+        {
+            _dsa.ImportKeys(publicKeyPath, privateKeyPath);
+            MessageBox.Show("Keys were imported successfully!");
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error during import:{ex.Message}!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+       
     }
 
     private void OnInputTypeChanged(object sender, RoutedEventArgs e)
@@ -671,8 +686,15 @@ public partial class MainWindow : Window
         }
         else if (DsaInputTypeComboBox.SelectedIndex == 1 && !string.IsNullOrEmpty(_selectedFilePath))
         {
-            var fileData = File.ReadAllText(_selectedFilePath);
-            _signature = _dsa.SignData(fileData);
+            try
+            {
+                var fileData = File.ReadAllText(_selectedFilePath);
+                _signature = _dsa.SignData(fileData);
+            }
+            catch (Exception ex)
+            {
+
+            }
         }
 
         SignatureDisplay.Text = $"Signature: {_signature}";

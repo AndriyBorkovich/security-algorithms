@@ -17,7 +17,7 @@ public class DSA
         File.WriteAllBytes(privateKeyPath, privateKey);
     }
 
-    public void ImportKeys( string publicKeyPath, string privateKeyPath)
+    public void ImportKeys(string publicKeyPath, string privateKeyPath)
     {
         var publicKey = File.ReadAllBytes(publicKeyPath);
         _dsa.ImportSubjectPublicKeyInfo(publicKey, out _);
